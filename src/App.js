@@ -1,10 +1,22 @@
 import { useState } from "react";
-import { BotaoReiniciar } from "./Reiniciar";
+import { BotaoReiniciar } from "./reiniciar";
 
-function Square({ valor, func, vencedor }) {
+const SIMBOLOS = ["X", "O", "Δ", "◻"];
+
+function Square({ valor, func, vencedor, tamanhoGrid }) {
+  let colorClass = "";
+  if (valor === "X") colorClass = "text-x";
+  else if (valor === "O") colorClass = "text-o";
+  else if (valor === "Δ") colorClass = "text-delta";
+  else if (valor === "◻") colorClass = "text-square";
+
+  let sizeClass = "square";
+  if (tamanhoGrid === 7) sizeClass = "square-small";
+  if (tamanhoGrid === 9) sizeClass = "square-small square-extra-small";
+
   return (
     <button
-      className={`square ${vencedor ? "winner" : ""}`}
+      className={`${sizeClass} ${vencedor ? "winner" : ""} ${colorClass}`}
       onClick={func}
     >
       {valor}
@@ -13,211 +25,325 @@ function Square({ valor, func, vencedor }) {
 }
 
 export default function Campo() {
+  const [tamanhoGrid, setTamanhoGrid] = useState(3);
+  const [numJogadores, setNumJogadores] = useState(2);
   const [quadrados, setQuadrados] = useState(Array(9).fill(null));
-  const [estado, setEstado] = useState(false);
+  
+  const [turno, setTurno] = useState(0); // 0 = X, 1 = O, 2 = Δ, 3 = ◻
   const [status, setStatus] = useState(null);
 
-  const [placarX, setPlacarX] = useState(0);
-  const [placarO, setPlacarO] = useState(0);
-  const [empates, setEmpates] = useState(0);
+  // Placar adaptado para suportar qualquer jogador + empates
+  const [placar, setPlacar] = useState({ "X": 0, "O": 0, "Δ": 0, "◻": 0, "Empates": 0 });
 
   const [historico, setHistorico] = useState([]);
   const [vencedores, setVencedores] = useState([]);
 
   const [contraMaquina, setContraMaquina] = useState(false);
+  const [dificuldade, setDificuldade] = useState("facil");
 
-  function calcularVencedor(tabuleiro) {
-    const linhas = [
-      [0, 1, 2],
-      [3, 4, 5],
-      [6, 7, 8],
-      [0, 3, 6],
-      [1, 4, 7],
-      [2, 5, 8],
-      [0, 4, 8],
-      [2, 4, 6]
-    ];
+  const sequenciaVitoria = tamanhoGrid === 3 ? 3 : (tamanhoGrid === 9 ? 5 : 4);
+  const jogadorAtual = SIMBOLOS[turno];
 
-    for (let i = 0; i < linhas.length; i++) {
-      const [a, b, c] = linhas[i];
+  function mudarTamanhoJogo(novoTamanho) {
+    setTamanhoGrid(novoTamanho);
+    setQuadrados(Array(novoTamanho * novoTamanho).fill(null));
+    setTurno(0);
+    setStatus(null);
+    setHistorico([]);
+    setVencedores([]);
+    if (novoTamanho !== 9) setNumJogadores(2); // Retorna a 2 jogadores se sair do 9x9
+  }
 
-      if (
-        tabuleiro[a] &&
-        tabuleiro[a] === tabuleiro[b] &&
-        tabuleiro[a] === tabuleiro[c]
-      ) {
-        return {
-          vencedor: tabuleiro[a],
-          linha: linhas[i]
-        };
+  function mudarNumJogadores(num) {
+    setNumJogadores(num);
+    if (num > 2) setContraMaquina(false); // Desativa máquina se tiver 4 jogadores
+    setQuadrados(Array(tamanhoGrid * tamanhoGrid).fill(null));
+    setTurno(0);
+    setStatus(null);
+    setHistorico([]);
+    setVencedores([]);
+  }
+
+  function calcularVencedor(tabuleiro, tamanho, seq) {
+    for (let r = 0; r < tamanho; r++) {
+      for (let c = 0; c < tamanho; c++) {
+        let pos = r * tamanho + c;
+        let jogador = tabuleiro[pos];
+        if (!jogador) continue;
+
+        if (c <= tamanho - seq) {
+          let venceu = true, linha = [];
+          for (let i = 0; i < seq; i++) {
+            if (tabuleiro[r * tamanho + c + i] !== jogador) venceu = false;
+            linha.push(r * tamanho + c + i);
+          }
+          if (venceu) return { vencedor: jogador, linha };
+        }
+        if (r <= tamanho - seq) {
+          let venceu = true, linha = [];
+          for (let i = 0; i < seq; i++) {
+            if (tabuleiro[(r + i) * tamanho + c] !== jogador) venceu = false;
+            linha.push((r + i) * tamanho + c);
+          }
+          if (venceu) return { vencedor: jogador, linha };
+        }
+        if (r <= tamanho - seq && c <= tamanho - seq) {
+          let venceu = true, linha = [];
+          for (let i = 0; i < seq; i++) {
+            if (tabuleiro[(r + i) * tamanho + c + i] !== jogador) venceu = false;
+            linha.push((r + i) * tamanho + c + i);
+          }
+          if (venceu) return { vencedor: jogador, linha };
+        }
+        if (r <= tamanho - seq && c >= seq - 1) {
+          let venceu = true, linha = [];
+          for (let i = 0; i < seq; i++) {
+            if (tabuleiro[(r + i) * tamanho + c - i] !== jogador) venceu = false;
+            linha.push((r + i) * tamanho + c - i);
+          }
+          if (venceu) return { vencedor: jogador, linha };
+        }
       }
     }
-
     if (tabuleiro.every(casa => casa !== null)) {
       return { vencedor: "empate", linha: [] };
     }
-
     return null;
   }
 
   function finalizarJogo(resultado) {
-    if (resultado.vencedor === "X") {
-      setStatus("Jogador X venceu!");
-      setPlacarX(v => v + 1);
-      setVencedores(resultado.linha);
-    } else if (resultado.vencedor === "O") {
-      setStatus("Jogador O venceu!");
-      setPlacarO(v => v + 1);
-      setVencedores(resultado.linha);
+    if (resultado.vencedor === "empate") {
+      setStatus("Deu Velha! (Empate) 🤝");
+      setPlacar(p => ({ ...p, Empates: p.Empates + 1 }));
     } else {
-      setStatus("Empate!");
-      setEmpates(v => v + 1);
+      setStatus(`Jogador ${resultado.vencedor} venceu! 🎉`);
+      setPlacar(p => ({ ...p, [resultado.vencedor]: p[resultado.vencedor] + 1 }));
+      setVencedores(resultado.linha);
     }
   }
 
-  function jogadaMaquina(tabuleiroAtual) {
-    let livres = [];
-
-    for (let i = 0; i < 9; i++) {
+  function procurarJogadaCritica(tabuleiroAtual, jogador) {
+    for (let i = 0; i < tamanhoGrid * tamanhoGrid; i++) {
       if (tabuleiroAtual[i] === null) {
-        livres.push(i);
+        const temp = [...tabuleiroAtual];
+        temp[i] = jogador;
+        if (calcularVencedor(temp, tamanhoGrid, sequenciaVitoria)) return i;
+      }
+    }
+    return -1;
+  }
+
+  function jogadaMaquina(tabuleiroAtual) {
+    if (status) return;
+    let livres = [];
+    for (let i = 0; i < tamanhoGrid * tamanhoGrid; i++) {
+      if (tabuleiroAtual[i] === null) livres.push(i);
+    }
+    if (livres.length === 0) return;
+
+    let posicao = -1;
+
+    if (dificuldade === "facil") {
+      posicao = livres[Math.floor(Math.random() * livres.length)];
+    } else {
+      posicao = procurarJogadaCritica(tabuleiroAtual, "O"); // Tenta ganhar
+      if (posicao === -1) {
+        posicao = procurarJogadaCritica(tabuleiroAtual, "X"); // Tenta bloquear
+      }
+      if (posicao === -1) {
+        const centro = Math.floor((tamanhoGrid * tamanhoGrid) / 2);
+        if (tabuleiroAtual[centro] === null && dificuldade === "dificil") {
+          posicao = centro;
+        } else {
+          posicao = livres[Math.floor(Math.random() * livres.length)];
+        }
       }
     }
 
-    if (livres.length === 0) return;
-
-    const posicao =
-      livres[Math.floor(Math.random() * livres.length)];
-
     const novo = [...tabuleiroAtual];
     novo[posicao] = "O";
-
     setQuadrados(novo);
+    setHistorico(h => [...h, { posicao, msg: `Jogada ${h.length + 1}: O na posição ${posicao}` }]);
 
-    setHistorico(h => [
-      ...h,
-      `Jogada ${h.length + 1}: O na posição ${posicao}`
-    ]);
-
-    const resultado = calcularVencedor(novo);
-
+    const resultado = calcularVencedor(novo, tamanhoGrid, sequenciaVitoria);
     if (resultado) {
       finalizarJogo(resultado);
     } else {
-      setEstado(false);
+      setTurno(0); // Volta para o X
     }
   }
 
   function handleClick(i) {
-    if (status) return;
+    if (status || quadrados[i] !== null) return;
 
     const novo = [...quadrados];
-
-    if (novo[i] !== null) return;
-
-    const jogador = estado ? "O" : "X";
-
-    novo[i] = jogador;
-
+    novo[i] = jogadorAtual;
     setQuadrados(novo);
+    setHistorico(h => [...h, { posicao: i, msg: `Jogada ${h.length + 1}: ${jogadorAtual} na posição ${i}` }]);
 
-    setHistorico(h => [
-      ...h,
-      `Jogada ${h.length + 1}: ${jogador} na posição ${i}`
-    ]);
-
-    const resultado = calcularVencedor(novo);
-
+    const resultado = calcularVencedor(novo, tamanhoGrid, sequenciaVitoria);
     if (resultado) {
       finalizarJogo(resultado);
       return;
     }
+    
+    const proximoTurno = (turno + 1) % numJogadores;
+    setTurno(proximoTurno);
 
-    setEstado(!estado);
-
-    if (contraMaquina && jogador === "X") {
-      setTimeout(() => {
-        jogadaMaquina(novo);
-      }, 500);
+    if (contraMaquina && numJogadores === 2 && proximoTurno === 1) {
+      setTimeout(() => { jogadaMaquina(novo); }, 500);
     }
   }
 
   function desfazerJogada() {
     if (historico.length === 0 || status) return;
-
     const novoHistorico = [...historico];
-    novoHistorico.pop();
-
     const novoTabuleiro = [...quadrados];
 
-    for (let i = 8; i >= 0; i--) {
-      if (novoTabuleiro[i] !== null) {
-        novoTabuleiro[i] = null;
-        break;
-      }
+    // Se estiver a jogar contra a máquina, retrocede duas jogadas (a da máquina e a sua)
+    if (contraMaquina && numJogadores === 2 && historico.length >= 2) {
+      const last1 = novoHistorico.pop();
+      const last2 = novoHistorico.pop();
+      novoTabuleiro[last1.posicao] = null;
+      novoTabuleiro[last2.posicao] = null;
+    } else {
+      const last = novoHistorico.pop();
+      novoTabuleiro[last.posicao] = null;
+      setTurno((turno - 1 + numJogadores) % numJogadores);
     }
 
     setHistorico(novoHistorico);
     setQuadrados(novoTabuleiro);
-    setEstado(!estado);
   }
 
-  const jogadorAtual = estado ? "O" : "X";
+  // Gera a malha visual
+  const boardRows = [];
+  for (let r = 0; r < tamanhoGrid; r++) {
+    const rowSquares = [];
+    for (let c = 0; c < tamanhoGrid; c++) {
+      const i = r * tamanhoGrid + c;
+      rowSquares.push(
+        <Square 
+          key={i} 
+          valor={quadrados[i]} 
+          vencedor={vencedores.includes(i)} 
+          func={() => handleClick(i)} 
+          tamanhoGrid={tamanhoGrid}
+        />
+      );
+    }
+    boardRows.push(<div key={r} className="board-row">{rowSquares}</div>);
+  }
+
+  // Define uma classe CSS dinâmica baseada no tamanho da grelha
+  const containerClass = `game-container container-${tamanhoGrid}x${tamanhoGrid}`;
 
   return (
-    <>
-      <h2>Vez do jogador: {jogadorAtual}</h2>
+    <div className={containerClass}>
+      <div className="header">
+        <h2>Vez do jogador: <span className={colorClass(jogadorAtual)}>{jogadorAtual}</span></h2>
+        
+        <div className="controls-header" style={{flexWrap: "wrap", marginBottom: "15px", justifyContent: "center"}}>
+          <select 
+            className="select-dificuldade" 
+            value={tamanhoGrid} 
+            onChange={(e) => mudarTamanhoJogo(Number(e.target.value))}
+          >
+            <option value={3}>Malha: 3x3</option>
+            <option value={5}>Malha: 5x5 (4 em linha)</option>
+            <option value={7}>Malha: 7x7 (4 em linha)</option>
+            <option value={9}>Malha: 9x9 (5 em linha)</option>
+          </select>
 
-      <h3>Modo: {contraMaquina ? "Jogador vs Máquina" : "Jogador vs Jogador"}</h3>
+          {tamanhoGrid === 9 && (
+            <select 
+              className="select-dificuldade" 
+              value={numJogadores} 
+              onChange={(e) => mudarNumJogadores(Number(e.target.value))}
+            >
+              <option value={2}>2 Jogadores</option>
+              <option value={4}>4 Jogadores</option>
+            </select>
+          )}
 
-      <button onClick={() => setContraMaquina(!contraMaquina)}>
-        Trocar Modo
-      </button>
+          <button 
+            className="btn-secondary select-dificuldade" 
+            onClick={() => {
+              setContraMaquina(!contraMaquina);
+              mudarTamanhoJogo(tamanhoGrid); // Reseta ao trocar
+            }}
+            disabled={numJogadores === 4}
+            style={{padding: "8px 12px", border: "1px solid #ccc", background: contraMaquina ? "#007bff" : "#e4e6eb", color: contraMaquina ? "white" : "inherit"}}
+          >
+            {contraMaquina ? "🤖 VS Máquina (ON)" : "🧑‍🤝‍🧑 VS Máquina (OFF)"}
+          </button>
 
-      <h3>Placar</h3>
-      <p>X: {placarX}</p>
-      <p>O: {placarO}</p>
-      <p>Empates: {empates}</p>
-
-      <div className="board-row">
-        <Square valor={quadrados[0]} vencedor={vencedores.includes(0)} func={() => handleClick(0)} />
-        <Square valor={quadrados[1]} vencedor={vencedores.includes(1)} func={() => handleClick(1)} />
-        <Square valor={quadrados[2]} vencedor={vencedores.includes(2)} func={() => handleClick(2)} />
+          {contraMaquina && numJogadores === 2 && (
+            <select 
+              className="select-dificuldade" 
+              value={dificuldade} 
+              onChange={(e) => setDificuldade(e.target.value)}
+            >
+              <option value="facil">Dif: Fácil</option>
+              <option value="medio">Dif: Médio</option>
+              <option value="dificil">Dif: Difícil</option>
+            </select>
+          )}
+        </div>
       </div>
 
-      <div className="board-row">
-        <Square valor={quadrados[3]} vencedor={vencedores.includes(3)} func={() => handleClick(3)} />
-        <Square valor={quadrados[4]} vencedor={vencedores.includes(4)} func={() => handleClick(4)} />
-        <Square valor={quadrados[5]} vencedor={vencedores.includes(5)} func={() => handleClick(5)} />
-      </div>
-
-      <div className="board-row">
-        <Square valor={quadrados[6]} vencedor={vencedores.includes(6)} func={() => handleClick(6)} />
-        <Square valor={quadrados[7]} vencedor={vencedores.includes(7)} func={() => handleClick(7)} />
-        <Square valor={quadrados[8]} vencedor={vencedores.includes(8)} func={() => handleClick(8)} />
-      </div>
-
-      <h1>{status}</h1>
-
-      <BotaoReiniciar
-        setQuadrados={setQuadrados}
-        setEstado={setEstado}
-        setStatus={setStatus}
-        setHistorico={setHistorico}
-        setVencedores={setVencedores}
-      />
-
-      <button onClick={desfazerJogada}>
-        Desfazer Jogada
-      </button>
-
-      <h3>Histórico</h3>
-
-      <ul>
-        {historico.map((item, index) => (
-          <li key={index}>{item}</li>
+      <div className="scoreboard" style={{flexWrap: "wrap"}}>
+        {SIMBOLOS.slice(0, numJogadores).map(simbolo => (
+          <div className="score-box" key={simbolo} style={{minWidth: "60px"}}>
+            <span>{simbolo}</span>
+            <strong>{placar[simbolo]}</strong>
+          </div>
         ))}
-      </ul>
-    </>
+        <div className="score-box" style={{minWidth: "70px"}}>
+          <span>Empates</span>
+          <strong>{placar["Empates"]}</strong>
+        </div>
+      </div>
+
+      <div className="board">
+        {boardRows}
+      </div>
+
+      <div className="status-message">
+        {status ? <h1>{status}</h1> : <h1 style={{visibility: "hidden"}}>_</h1>}
+      </div>
+
+      <div className="controls">
+        <BotaoReiniciar
+          setQuadrados={() => setQuadrados(Array(tamanhoGrid * tamanhoGrid).fill(null))}
+          setEstado={() => setTurno(0)}
+          setStatus={setStatus}
+          setHistorico={setHistorico}
+          setVencedores={setVencedores}
+        />
+        <button className="btn-secondary" onClick={desfazerJogada} disabled={historico.length === 0 || status}>
+          Desfazer
+        </button>
+      </div>
+
+      {historico.length > 0 && (
+        <div className="history">
+          <h3>Histórico ({historico.length} jogadas)</h3>
+          <ul>
+            {historico.map((item, index) => (
+              <li key={index}>{item.msg}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
   );
-    }
+
+  // Helper local para as cores do título
+  function colorClass(simbolo) {
+    if (simbolo === "X") return "text-x";
+    if (simbolo === "O") return "text-o";
+    if (simbolo === "Δ") return "text-delta";
+    return "text-square";
+  }
+}

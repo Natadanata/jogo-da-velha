@@ -1,95 +1,327 @@
+/* Reset básico e tipografia */
 * {
   box-sizing: border-box;
-}
-
-body {
-  font-family: sans-serif;
-  margin: 20px;
+  margin: 0;
   padding: 0;
 }
 
-h1 {
-  margin-top: 0;
+body {
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  /* Um gradiente moderno que vai do azul escuro ao roxo */
+  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #7c3aed 100%);
+  color: #333;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+/* Container principal do jogo */
+.game-container {
+  background: #ffffff;
+  padding: 30px;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  max-width: 420px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Cabeçalho */
+.header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.header h2 {
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+.mode-badge {
+  background-color: #e4e6eb;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  display: inline-block;
+  color: #555;
+}
+
+/* Placar (Scoreboard) */
+.scoreboard {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 20px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 15px;
+  border: 1px solid #e0e0e0;
+}
+
+.score-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+}
+
+.score-box span {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #666;
+  margin-bottom: 5px;
+}
+
+.score-box strong {
   font-size: 22px;
 }
 
-h2 {
-  margin-top: 0;
-  font-size: 20px;
+/* Estilo do Tabuleiro */
+.board {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  background-color: #333; /* Cor das linhas da grade */
+  padding: 5px;
+  border-radius: 12px;
 }
 
-h3 {
-  margin-top: 0;
-  font-size: 18px;
-}
-
-h4 {
-  margin-top: 0;
-  font-size: 16px;
-}
-
-h5 {
-  margin-top: 0;
-  font-size: 14px;
-}
-
-h6 {
-  margin-top: 0;
-  font-size: 12px;
-}
-
-code {
-  font-size: 1.2em;
-}
-
-ul {
-  padding-inline-start: 20px;
-}
-
-* {
-  box-sizing: border-box;
-}
-
-body {
-  font-family: sans-serif;
-  margin: 20px;
-  padding: 0;
+.board-row {
+  display: flex;
+  gap: 5px;
 }
 
 .square {
   background: #fff;
-  border: 1px solid #999;
-  float: left;
-  font-size: 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 48px;
   font-weight: bold;
-  line-height: 34px;
-  height: 34px;
-  margin-right: -1px;
-  margin-top: -1px;
-  padding: 0;
-  text-align: center;
-  width: 34px;
-}
-
-.board-row:after {
-  clear: both;
-  content: '';
-  display: table;
-}
-
-.status {
-  margin-bottom: 10px;
-}
-.game {
+  height: 80px;
+  width: 80px;
   display: flex;
-  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.game-info {
-  margin-left: 20px;
+.square:hover {
+  background: #f1f1f1;
 }
+
+/* Cores dos jogadores e do vencedor */
+.text-x { color: #007bff; }
+.text-o { color: #dc3545; }
 
 .winner {
-  background-color: yellow;
-  border: 3px solid red;
+  background-color: #d4edda !important;
+  color: #155724;
+  transform: scale(1.05);
+  box-shadow: 0 0 10px rgba(40, 167, 69, 0.4);
+}
+
+/* Mensagem de status final */
+.status-message {
+  margin: 20px 0;
+  height: 30px;
+  text-align: center;
+}
+
+.status-message h1 {
+  font-size: 22px;
+  color: #28a745;
+}
+
+/* Botões Customizados */
+button {
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.3s, transform 0.1s;
+}
+
+button:active {
+  transform: scale(0.97);
+}
+
+.controls {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.controls > div {
+  flex: 1;
+}
+
+.btn-primary, .btn-secondary {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.btn-primary {
+  background-color: #007bff;
+  color: white;
+}
+
+.btn-primary:hover { background-color: #0056b3; }
+
+.btn-secondary {
+  background-color: #e4e6eb;
+  color: #333;
+}
+
+.btn-secondary:hover { background-color: #d1d4d9; }
+.btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Histórico de jogadas */
+.history {
+  width: 100%;
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 12px;
+  max-height: 150px;
+  overflow-y: auto;
+  border: 1px solid #e0e0e0;
+}
+
+.history h3 {
+  margin-bottom: 10px;
+  font-size: 16px;
+  color: #444;
+  text-align: center;
+}
+
+.history ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.history li {
+  background: #fff;
+  padding: 8px 12px;
+  margin-bottom: 5px;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #555;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+/* Estilos para os controles do cabeçalho */
+.controls-header {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.controls-header .btn-secondary {
+  padding: 8px 16px;
+  font-size: 14px;
+}
+
+.select-dificuldade {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  background-color: #f8f9fa;
+  font-size: 14px;
+  font-family: inherit;
+  font-weight: 600;
+  color: #333;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.select-dificuldade:hover {
+  background-color: #e4e6eb;
+}
+
+/* Ajuste caso esteja usando o Tema Escuro */
+body[style*="background-color: #121214"] .select-dificuldade,
+.game-container[style*="background: #202024"] .select-dificuldade {
+  background-color: #29292e;
+  color: #e1e1e6;
+  border: 1px solid #323238;
+}
+
+/* Modificações para o modo 7x7 */
+.container-7x7 {
+  max-width: 520px; /* Aumenta um pouco a caixa principal para acomodar 7 colunas */
+}
+
+.square-small {
+  background: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 24px; /* Letra mais pequena */
+  font-weight: bold;
+  height: 45px; /* Botões mais pequenos */
+  width: 45px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.square-small:hover {
+  background: #f1f1f1;
+}
+
+/* Ajuste para tema escuro, se estiver a usá-lo */
+body[style*="background-color: #121214"] .square-small,
+.game-container[style*="background: #202024"] .square-small {
+  background: #29292e;
+}
+.game-container[style*="background: #202024"] .square-small:hover {
+  background: #323238;
+}
+
+/* Adaptações da caixa principal baseadas no tamanho do tabuleiro */
+.container-5x5 { max-width: 480px; }
+.container-7x7 { max-width: 520px; }
+.container-9x9 { max-width: 660px; }
+
+/* Quadrados miniatura para o tabuleiro 9x9 */
+.square-extra-small {
+  width: 38px !important;
+  height: 38px !important;
+  font-size: 20px !important;
+}
+
+/* Ajustes para o painel de placar se auto-ajustar em 4 jogadores */
+.scoreboard {
+  flex-wrap: wrap; 
+  gap: 10px;
+}
+
+/* Cores dos novos jogadores (Jogador 3 e Jogador 4) */
+.text-delta { color: #28a745; } /* Cor Verde */
+.text-square { color: #ff851b; } /* Cor Laranja */
+
+/* Ajuste para não bugar o botão do modo máquina caso seja clicado */
+.controls-header button {
+  cursor: pointer;
+}
+.controls-header button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
