@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Menu do Jogo</title>
+
+<style>
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial,Helvetica,sans-serif;
+}
+
+body{
+height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+background:#0d1117;
+background-size:cover;
+background-position:center;
+color:white;
+}
+
+.menu{
+background:rgba(0,0,0,.7);
+padding:40px;
+border-radius:20px;
+text-align:center;
+box-shadow:0 0 20px #000;
+width:350px;
+}
+
+h1{
+margin-bottom:30px;
+}
+
+button{
+width:100%;
+padding:15px;
+margin:10px 0;
+font-size:18px;
+border:none;
+border-radius:10px;
+cursor:pointer;
+background:#238636;
+color:white;
+transition:.3s;
+}
+
+button:hover{
+transform:scale(1.05);
+background:#2ea043;
+}
+
+input{
+margin-top:10px;
+color:white;
+}
+
+#config{
+display:none;
+}
+</style>
+
+</head>
+<body>
+
+<audio id="player" loop></audio>
+
+<div class="menu" id="menu">
+
+<h1>🎮 Jogo da Velha</h1>
+
+<button onclick="play()">▶ PLAY</button>
+
+<button onclick="abrirConfig()">⚙ Configurações</button>
+
+</div>
+
+<div class="menu" id="config">
+
+<h1>⚙ Configurações</h1>
+
+<h3>Músicas</h3>
+
+<button onclick="musica('musicas/musica1.mp3')">Música 1</button>
+
+<button onclick="musica('musicas/musica2.mp3')">Música 2</button>
+
+<button onclick="musica('musicas/musica3.mp3')">Música 3</button>
+
+<button onclick="parar()">Sem Música</button>
+
+<hr style="margin:20px 0;">
+
+<h3>Plano de Fundo</h3>
+
+<button onclick="fundo('fundos/fundo1.jpg')">Fundo 1</button>
+
+<button onclick="fundo('fundos/fundo2.jpg')">Fundo 2</button>
+
+<button onclick="fundo('fundos/fundo3.jpg')">Fundo 3</button>
+
+<br><br>
+
+<input type="file" accept="image/*" onchange="galeria(event)">
+
+<br><br>
+
+<button onclick="voltar()">⬅ Voltar</button>
+
+</div>
+
+<script>
+
+const audio=document.getElementById("player");
+
+function play(){
+
+alert("Aqui abre o jogo.");
+
+}
+
+function abrirConfig(){
+
+menu.style.display="none";
+config.style.display="block";
+
+}
+
+function voltar(){
+
+config.style.display="none";
+menu.style.display="block";
+
+}
+
+function musica(src){
+
+audio.src=src;
+audio.play();
+
+}
+
+function parar(){
+
+audio.pause();
+
+}
+
+function fundo(img){
+
+document.body.style.backgroundImage=`url(${img})`;
+
+}
+
+function galeria(e){
+
+const arquivo=e.target.files[0];
+
+if(!arquivo) return;
+
+const url=URL.createObjectURL(arquivo);
+
+document.body.style.backgroundImage=`url(${url})`;
+
+}
+
+</script>
+
+</body>
+</html>
