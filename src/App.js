@@ -3,6 +3,7 @@ import { BotaoReiniciar } from "./reiniciar";
 
 const SIMBOLOS = ["X", "O", "Δ", "◻"];
 
+/* Componente que renderiza cada quadrado individual do tabuleiro, definindo suas cores e tamanhos táteis */
 function Square({ valor, func, vencedor, tamanhoGrid }) {
   let colorClass = "";
   if (valor === "X") colorClass = "text-x";
@@ -24,6 +25,7 @@ function Square({ valor, func, vencedor, tamanhoGrid }) {
   );
 }
 
+/* Componente principal que gerencia os estados do jogo, placar, histórico, IA e renderiza a tela */
 export default function Campo() {
   const [tamanhoGrid, setTamanhoGrid] = useState(3);
   const [numJogadores, setNumJogadores] = useState(2);
@@ -44,6 +46,7 @@ export default function Campo() {
   const sequenciaVitoria = tamanhoGrid === 3 ? 3 : (tamanhoGrid === 9 ? 5 : 4);
   const jogadorAtual = SIMBOLOS[turno];
 
+  /* Altera as dimensões da malha do jogo e reinicia o tabuleiro e estados da rodada */
   function mudarTamanhoJogo(novoTamanho) {
     setTamanhoGrid(novoTamanho);
     setQuadrados(Array(novoTamanho * novoTamanho).fill(null));
@@ -54,6 +57,7 @@ export default function Campo() {
     if (novoTamanho !== 9) setNumJogadores(2); // Retorna a 2 jogadores se sair do 9x9
   }
 
+  /* Modifica a quantidade de jogadores na partida e reseta as configurações do tabuleiro */
   function mudarNumJogadores(num) {
     setNumJogadores(num);
     if (num > 2) setContraMaquina(false); // Desativa máquina se tiver 4 jogadores
@@ -64,6 +68,7 @@ export default function Campo() {
     setVencedores([]);
   }
 
+  /* Analisa o tabuleiro para verificar se há linhas, colunas ou diagonais vitoriosas ou empate */
   function calcularVencedor(tabuleiro, tamanho, seq) {
     for (let r = 0; r < tamanho; r++) {
       for (let c = 0; c < tamanho; c++) {
@@ -111,6 +116,7 @@ export default function Campo() {
     return null;
   }
 
+  /* Mostra a mensagem final do jogo na tela e atualiza a pontuação do placar geral */
   function finalizarJogo(resultado) {
     if (resultado.vencedor === "empate") {
       setStatus("Deu Velha! (Empate) 🤝");
@@ -122,10 +128,12 @@ export default function Campo() {
     }
   }
 
+  /* Analisa se o jogador informado está prestes a ganhar para que a IA possa vencer ou bloquear */
   function procurarJogadaCritica(tabuleiroAtual, jogador) {
     for (let i = 0; i < tamanhoGrid * tamanhoGrid; i++) {
       if (tabuleiroAtual[i] === null) {
         const temp = [...tabuleiroAtual];
+        temp[i] = actor;
         temp[i] = jogador;
         if (calcularVencedor(temp, tamanhoGrid, sequenciaVitoria)) return i;
       }
@@ -133,6 +141,7 @@ export default function Campo() {
     return -1;
   }
 
+  /* Controla a IA calculando a melhor jogada ou jogando aleatório baseado na dificuldade */
   function jogadaMaquina(tabuleiroAtual) {
     if (status) return;
     let livres = [];
@@ -173,6 +182,7 @@ export default function Campo() {
     }
   }
 
+  /* Gerencia o clique do jogador humano, valida a jogada e aciona a IA se necessário */
   function handleClick(i) {
     if (status || quadrados[i] !== null) return;
 
@@ -195,6 +205,7 @@ export default function Campo() {
     }
   }
 
+  /* Remove o último movimento feito, adaptando para remover dois se for contra a máquina */
   function desfazerJogada() {
     if (historico.length === 0 || status) return;
     const novoHistorico = [...historico];
@@ -339,7 +350,7 @@ export default function Campo() {
     </div>
   );
 
-  // Helper local para as cores do título
+  /* Helper local para definir a classe de cor correta da string do jogador atual */
   function colorClass(simbolo) {
     if (simbolo === "X") return "text-x";
     if (simbolo === "O") return "text-o";
