@@ -50,7 +50,6 @@ export default function Campo() {
 
   const [pokemonJogadores, setPokemonJogadores] = useState([null, null, null, null]);
   
-  // MODIFICAÇÃO: Deixei o Pikachu e o Eevee como padrão, mas você pode digitar QUALQUER nome aqui
   const [buscaP1, setBuscaP1] = useState("pikachu");
   const [buscaP2, setBuscaP2] = useState("eevee");
   const [buscaP3, setBuscaP3] = useState("mewtwo");
@@ -92,7 +91,7 @@ export default function Campo() {
     }
   }, [volume, mutado]);
 
-  // MODIFICAÇÃO: Agora ele carrega automaticamente os nomes que você escolheu nas variáveis de busca iniciais
+  // Carrega automaticamente os pokémons iniciais
   useEffect(() => {
     carregarPokemons(buscaP1, buscaP2, buscaP3, buscaP4);
   }, []);
@@ -109,7 +108,6 @@ export default function Campo() {
 
   async function fetchPokemon(nomePokemon) {
     try {
-      // O PokeAPI aceita IDs (ex: 25) ou nomes (ex: lucario, rayquaza, ditto)
       const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${nomePokemon.toLowerCase().trim()}`);
       if (!response.ok) {
         throw new Error(`Pokémon "${nomePokemon}" não encontrado.`);
@@ -361,28 +359,57 @@ export default function Campo() {
       {/* Painel de Escolha de Pokémon */}
       <div className="pokemon-selector" style={{ width: "100%", marginBottom: "20px", background: "#f8f9fa", padding: "15px", borderRadius: "12px", border: "1px solid #e0e0e0" }}>
         <h4 style={{ textAlign: "center", marginBottom: "10px" }}>Batalha Pokémon!</h4>
-        <div style={{ display: "flex", gap: "15px", margin: "10px 0", flexWrap: "wrap", justifyContent: "center" }}>
-          <div>
-            <label style={{ fontSize: "14px", fontWeight: "bold" }}>Jogador 1: </label>
-            <input value={buscaP1} onChange={e => setBuscaP1(e.target.value)} style={{ padding: "6px", borderRadius: "4px", border: "1px solid #ccc", width: "110px" }} placeholder="Ex: rayquaza" />
+        <div style={{ display: "flex", gap: "20px", margin: "10px 0", flexWrap: "wrap", justifyContent: "center" }}>
+          
+          {/* Jogador 1 */}
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <div>
+              <label style={{ fontSize: "14px", fontWeight: "bold", display: "block" }}>Jogador 1: </label>
+              <input value={buscaP1} onChange={e => setBuscaP1(e.target.value)} style={{ padding: "6px", borderRadius: "4px", border: "1px solid #ccc", width: "110px" }} placeholder="Ex: rayquaza" />
+            </div>
+            {pokemonJogadores[0]?.imagem && (
+              <img src={pokemonJogadores[0].imagem} alt="P1" style={{ width: "45px", height: "45px", objectFit: "contain", marginTop: "15px" }} />
+            )}
           </div>
-          <div>
-            <label style={{ fontSize: "14px", fontWeight: "bold" }}>Jogador 2: </label>
-            <input value={buscaP2} onChange={e => setBuscaP2(e.target.value)} style={{ padding: "6px", borderRadius: "4px", border: "1px solid #ccc", width: "110px" }} placeholder="Ex: lucario" />
+
+          {/* Jogador 2 */}
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <div>
+              <label style={{ fontSize: "14px", fontWeight: "bold", display: "block" }}>Jogador 2: </label>
+              <input value={buscaP2} onChange={e => setBuscaP2(e.target.value)} style={{ padding: "6px", borderRadius: "4px", border: "1px solid #ccc", width: "110px" }} placeholder="Ex: lucario" />
+            </div>
+            {pokemonJogadores[1]?.imagem && (
+              <img src={pokemonJogadores[1].imagem} alt="P2" style={{ width: "45px", height: "45px", objectFit: "contain", marginTop: "15px" }} />
+            )}
           </div>
+
           {numJogadores === 4 && (
             <>
-              <div>
-                <label style={{ fontSize: "14px", fontWeight: "bold" }}>Jogador 3: </label>
-                <input value={buscaP3} onChange={e => setBuscaP3(e.target.value)} style={{ padding: "6px", borderRadius: "4px", border: "1px solid #ccc", width: "110px" }} placeholder="Ex: ditto" />
+              {/* Jogador 3 */}
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <div>
+                  <label style={{ fontSize: "14px", fontWeight: "bold", display: "block" }}>Jogador 3: </label>
+                  <input value={buscaP3} onChange={e => setBuscaP3(e.target.value)} style={{ padding: "6px", borderRadius: "4px", border: "1px solid #ccc", width: "110px" }} placeholder="Ex: ditto" />
+                </div>
+                {pokemonJogadores[2]?.imagem && (
+                  <img src={pokemonJogadores[2].imagem} alt="P3" style={{ width: "45px", height: "45px", objectFit: "contain", marginTop: "15px" }} />
+                )}
               </div>
-              <div>
-                <label style={{ fontSize: "14px", fontWeight: "bold" }}>Jogador 4: </label>
-                <input value={buscaP4} onChange={e => setBuscaP4(e.target.value)} style={{ padding: "6px", borderRadius: "4px", border: "1px solid #ccc", width: "110px" }} placeholder="Ex: lugia" />
+
+              {/* Jogador 4 */}
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <div>
+                  <label style={{ fontSize: "14px", fontWeight: "bold", display: "block" }}>Jogador 4: </label>
+                  <input value={buscaP4} onChange={e => setBuscaP4(e.target.value)} style={{ padding: "6px", borderRadius: "4px", border: "1px solid #ccc", width: "110px" }} placeholder="Ex: lugia" />
+                </div>
+                {pokemonJogadores[3]?.imagem && (
+                  <img src={pokemonJogadores[3].imagem} alt="P4" style={{ width: "45px", height: "45px", objectFit: "contain", marginTop: "15px" }} />
+                )}
               </div>
             </>
           )}
         </div>
+        
         <button className="btn-primary" onClick={() => carregarPokemons(buscaP1, buscaP2, buscaP3, buscaP4)} style={{ width: "100%", marginTop: "10px" }}>
           Alterar Pokémon
         </button>
