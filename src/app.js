@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { BotaoReiniciar } from "./reiniciar";
 
 /* Componente que renderiza cada quadrado individual do tabuleiro */
@@ -7,7 +7,6 @@ function Square({ valor, func, vencedor, tamanhoGrid, jogadores }) {
   if (tamanhoGrid === 7) sizeClass = "square-small";
   if (tamanhoGrid === 9) sizeClass = "square-small square-extra-small";
 
-  // Define o conteúdo da casa (Imagem do Pokémon correspondente ao jogador)
   let conteudo = null;
   if (valor !== null && jogadores[valor]) {
     if (jogadores[valor].imagem) {
@@ -39,10 +38,9 @@ export default function Campo() {
   const [numJogadores, setNumJogadores] = useState(2);
   const [quadrados, setQuadrados] = useState(Array(9).fill(null));
   
-  const [turno, setTurno] = useState(0); // 0 = P1, 1 = P2, 2 = P3, 3 = P4
+  const [turno, setTurno] = useState(0); 
   const [status, setStatus] = useState(null);
 
-  // Placar utilizando o índice de cada um dos 4 jogadores e Empates
   const [placar, setPlacar] = useState({ 0: 0, 1: 0, 2: 0, 3: 0, "Empates": 0 });
   const [historico, setHistorico] = useState([]);
   const [vencedores, setVencedores] = useState([]);
@@ -50,24 +48,68 @@ export default function Campo() {
   const [contraMaquina, setContraMaquina] = useState(false);
   const [dificuldade, setDificuldade] = useState("facil");
 
-  // Estados da PokéAPI expandidos para 4 jogadores
   const [pokemonJogadores, setPokemonJogadores] = useState([null, null, null, null]);
+  
+  // MODIFICAÇÃO: Deixei o Pikachu e o Eevee como padrão, mas você pode digitar QUALQUER nome aqui
   const [buscaP1, setBuscaP1] = useState("pikachu");
-  const [buscaP2, setBuscaP2] = useState("bulbasaur");
-  const [buscaP3, setBuscaP3] = useState("charmander");
-  const [buscaP4, setBuscaP4] = useState("squirtle");
+  const [buscaP2, setBuscaP2] = useState("eevee");
+  const [buscaP3, setBuscaP3] = useState("mewtwo");
+  const [buscaP4, setBuscaP4] = useState("gengar");
   const [erroApi, setErroApi] = useState("");
+
+  // --- ESTADOS DA MÚSICA ---
+  const [volume, setVolume] = useState(0.5); 
+  const [mutado, setMutado] = useState(false);
+  const audioRef = useRef(null);
+
+  const caminhoMusica = "/music/BgPokemon.mp3"; 
 
   const sequenciaVitoria = tamanhoGrid === 3 ? 3 : (tamanhoGrid === 9 ? 5 : 4);
 
-  // 1. POKÉMONS INICIAIS: Carrega os 4 Pokémon automáticos na montagem do componente
+  // Inicialização do Áudio
   useEffect(() => {
-    carregarPokemons("pikachu", "bulbasaur", "charmander", "squirtle");
+    audioRef.current = new Audio(caminhoMusica);
+    audioRef.current.loop = true; 
+    audioRef.current.volume = volume;
+
+    const iniciarAudio = () => {
+      audioRef.current.play().catch(err => console.log("Aguardando interação para tocar áudio."));
+      window.removeEventListener("click", iniciarAudio);
+    };
+    window.addEventListener("click", iniciarAudio);
+
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+      window.removeEventListener("click", iniciarAudio);
+    };
   }, []);
 
-  // 4. CONSUMO DA API: Função assíncrona para buscar um Pokémon individual
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = mutado ? 0 : volume;
+    }
+  }, [volume, mutado]);
+
+  // MODIFICAÇÃO: Agora ele carrega automaticamente os nomes que você escolheu nas variáveis de busca iniciais
+  useEffect(() => {
+    carregarPokemons(buscaP1, buscaP2, buscaP3, buscaP4);
+  }, []);
+
+  const handleVolumeChange = (e) => {
+    const novoVolume = parseFloat(e.target.value);
+    setVolume(novoVolume);
+    if (novoVolume > 0) setMutado(false);
+  };
+
+  const alternarMute = () => {
+    setMutado(!mutado);
+  };
+
   async function fetchPokemon(nomePokemon) {
     try {
+      // O PokeAPI aceita IDs (ex: 25) ou nomes (ex: lucario, rayquaza, ditto)
       const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${nomePokemon.toLowerCase().trim()}`);
       if (!response.ok) {
         throw new Error(`Pokémon "${nomePokemon}" não encontrado.`);
@@ -82,7 +124,6 @@ export default function Campo() {
     }
   }
 
-  // 3 e 5. ESCOLHA DOS POKÉMONS E TRATAMENTO DE ERRO PARA OS 4 JOGADORES
   async function carregarPokemons(nomeP1, nomeP2, nomeP3, nomeP4) {
     setErroApi("");
     try {
@@ -138,7 +179,6 @@ export default function Campo() {
             if (tabuleiro[(r + i) * tamanho + c] !== jogador) venceu = false;
             linha.push((r + i) * tamanho + c);
           }
-          if (venceu) return { vencedor: opponent => opponent, linha }; // correção implícita
           if (venceu) return { vencedor: jogador, linha };
         }
         if (r <= tamanho - seq && c <= tamanho - seq) {
@@ -170,7 +210,6 @@ export default function Campo() {
       setStatus("Deu Velha! (Empate) 🤝");
       setPlacar(p => ({ ...p, Empates: p.Empates + 1 }));
     } else {
-      // 2. RENDERIZAÇÃO CONDICIONAL (?.) para obter o nome do Pokémon vencedor
       const nomeVencedor = pokemonJogadores[resultado.vencedor]?.nome || `Jogador ${resultado.vencedor + 1}`;
       setStatus(`${nomeVencedor} venceu! 🎉`);
       setPlacar(p => ({ ...p, [resultado.vencedor]: p[resultado.vencedor] + 1 }));
@@ -251,17 +290,19 @@ export default function Campo() {
 
   function desfazerJogada() {
     if (historico.length === 0 || status) return;
+    
     const novoHistorico = [...historico];
     const novoTabuleiro = [...quadrados];
 
     if (contraMaquina && numJogadores === 2 && historico.length >= 2) {
-      const last1 = novoHistorico.pop();
-      const last2 = novoHistorico.pop();
-      novoTabuleiro[last1.posicao] = null;
-      novoTabuleiro[last2.posicao] = null;
+      const ultimaJogadaMaquina = novoHistorico.pop();
+      const ultimaJogadaHumano = novoHistorico.pop();
+      novoTabuleiro[ultimaJogadaMaquina.posicao] = null;
+      novoTabuleiro[ultimaJogadaHumano.posicao] = null;
+      setTurno(0);
     } else {
-      const last = novoHistorico.pop();
-      novoTabuleiro[last.posicao] = null;
+      const ultimaJogada = novoHistorico.pop();
+      novoTabuleiro[ultimaJogada.posicao] = null;
       setTurno((turno - 1 + numJogadores) % numJogadores);
     }
 
@@ -291,62 +332,64 @@ export default function Campo() {
   return (
     <div className={`game-container container-${tamanhoGrid}x${tamanhoGrid}`}>
       
-      {/* 3. PAINEL DE ESCOLHA DE POKÉMON ADAPTÁVEL */}
+      {/* Painel de Controle de Música de Fundo */}
+      <div className="audio-controller" style={{ width: "100%", marginBottom: "15px", background: "#f1f3f5", padding: "10px 15px", borderRadius: "12px", border: "1px solid #dee2e6", display: "flex", alignItems: "center", justifyContent: "center", gap: "15px", flexWrap: "wrap" }}>
+        <button 
+          onClick={alternarMute} 
+          style={{ padding: "6px 12px", borderRadius: "6px", border: "1px solid #ced4da", background: mutado ? "#e63946" : "#fff", color: mutado ? "#fff" : "#000", cursor: "pointer", fontWeight: "bold" }}
+        >
+          {mutado ? "🔇 Mutado" : "🔊 Som"}
+        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <label htmlFor="volume-slider" style={{ fontSize: "14px", fontWeight: "bold" }}>Volume:</label>
+          <input 
+            id="volume-slider"
+            type="range" 
+            min="0" 
+            max="1" 
+            step="0.05" 
+            value={mutado ? 0 : volume} 
+            onChange={handleVolumeChange} 
+            style={{ cursor: "pointer", accentColor: "#007bff" }}
+          />
+          <span style={{ fontSize: "12px", minWidth: "35px", textAlign: "right" }}>
+            {mutado ? 0 : Math.round(volume * 100)}%
+          </span>
+        </div>
+      </div>
+
+      {/* Painel de Escolha de Pokémon */}
       <div className="pokemon-selector" style={{ width: "100%", marginBottom: "20px", background: "#f8f9fa", padding: "15px", borderRadius: "12px", border: "1px solid #e0e0e0" }}>
         <h4 style={{ textAlign: "center", marginBottom: "10px" }}>Batalha Pokémon!</h4>
         <div style={{ display: "flex", gap: "15px", margin: "10px 0", flexWrap: "wrap", justifyContent: "center" }}>
           <div>
             <label style={{ fontSize: "14px", fontWeight: "bold" }}>Jogador 1: </label>
-            <input 
-              value={buscaP1} 
-              onChange={e => setBuscaP1(e.target.value)} 
-              style={{ padding: "6px", borderRadius: "4px", border: "1px solid #ccc", width: "110px" }} 
-            />
+            <input value={buscaP1} onChange={e => setBuscaP1(e.target.value)} style={{ padding: "6px", borderRadius: "4px", border: "1px solid #ccc", width: "110px" }} placeholder="Ex: rayquaza" />
           </div>
           <div>
             <label style={{ fontSize: "14px", fontWeight: "bold" }}>Jogador 2: </label>
-            <input 
-              value={buscaP2} 
-              onChange={e => setBuscaP2(e.target.value)} 
-              style={{ padding: "6px", borderRadius: "4px", border: "1px solid #ccc", width: "110px" }} 
-            />
+            <input value={buscaP2} onChange={e => setBuscaP2(e.target.value)} style={{ padding: "6px", borderRadius: "4px", border: "1px solid #ccc", width: "110px" }} placeholder="Ex: lucario" />
           </div>
-          {/* Exibe os campos do Jogador 3 e 4 condicionalmente */}
           {numJogadores === 4 && (
             <>
               <div>
                 <label style={{ fontSize: "14px", fontWeight: "bold" }}>Jogador 3: </label>
-                <input 
-                  value={buscaP3} 
-                  onChange={e => setBuscaP3(e.target.value)} 
-                  style={{ padding: "6px", borderRadius: "4px", border: "1px solid #ccc", width: "110px" }} 
-                />
+                <input value={buscaP3} onChange={e => setBuscaP3(e.target.value)} style={{ padding: "6px", borderRadius: "4px", border: "1px solid #ccc", width: "110px" }} placeholder="Ex: ditto" />
               </div>
               <div>
                 <label style={{ fontSize: "14px", fontWeight: "bold" }}>Jogador 4: </label>
-                <input 
-                  value={buscaP4} 
-                  onChange={e => setBuscaP4(e.target.value)} 
-                  style={{ padding: "6px", borderRadius: "4px", border: "1px solid #ccc", width: "110px" }} 
-                />
+                <input value={buscaP4} onChange={e => setBuscaP4(e.target.value)} style={{ padding: "6px", borderRadius: "4px", border: "1px solid #ccc", width: "110px" }} placeholder="Ex: lugia" />
               </div>
             </>
           )}
         </div>
-        <button 
-          className="btn-primary" 
-          onClick={() => carregarPokemons(buscaP1, buscaP2, buscaP3, buscaP4)}
-          style={{ width: "100%", marginTop: "10px" }}
-        >
+        <button className="btn-primary" onClick={() => carregarPokemons(buscaP1, buscaP2, buscaP3, buscaP4)} style={{ width: "100%", marginTop: "10px" }}>
           Alterar Pokémon
         </button>
-        {erroApi && (
-          <p style={{ color: "#dc3545", marginTop: "10px", fontWeight: "bold", textAlign: "center" }}>
-            {erroApi}
-          </p>
-        )}
+        {erroApi && <p style={{ color: "#dc3545", marginTop: "10px", fontWeight: "bold", textAlign: "center" }}>{erroApi}</p>}
       </div>
 
+      {/* Header */}
       <div className="header">
         <h2>
           Vez de: <span style={{ color: turno === 0 ? "#007bff" : turno === 1 ? "#dc3545" : turno === 2 ? "#ffc107" : "#28a745" }}>
@@ -354,7 +397,7 @@ export default function Campo() {
           </span>
         </h2>
         
-        <div className="controls-header" style={{flexWrap: "wrap", marginBottom: "15px", justifyContent: "center"}}>
+        <div className="controls-header" style={{display: "flex", gap: "10px", flexWrap: "wrap", marginBottom: "15px", justifyContent: "center"}}>
           <select className="select-dificuldade" value={tamanhoGrid} onChange={(e) => mudarTamanhoJogo(Number(e.target.value))}>
             <option value={3}>Malha: 3x3</option>
             <option value={5}>Malha: 5x5 (4 em linha)</option>
@@ -387,31 +430,34 @@ export default function Campo() {
         </div>
       </div>
 
-      {/* RENDERIZAÇÃO DO PLACAR COM OS 4 JOGADORES */}
-      <div className="scoreboard" style={{flexWrap: "wrap"}}>
+      {/* Placar */}
+      <div className="scoreboard" style={{display: "flex", gap: "10px", flexWrap: "wrap", justifyContent: "center", marginBottom: "15px"}}>
         {[...Array(numJogadores)].map((_, index) => (
-          <div className="score-box" key={index} style={{minWidth: "60px"}}>
-            <span style={{ fontWeight: "bold" }}>
+          <div className="score-box" key={index} style={{minWidth: "60px", padding: "5px", border: "1px solid #ccc", textAlign: "center"}}>
+            <span style={{ fontWeight: "bold", display: "block" }}>
               {pokemonJogadores[index]?.nome || `J${index+1}`}
             </span>
             <strong>{placar[index]}</strong>
           </div>
         ))}
-        <div className="score-box" style={{minWidth: "70px"}}>
-          <span>Empates</span>
+        <div className="score-box" style={{minWidth: "70px", padding: "5px", border: "1px solid #ccc", textAlign: "center"}}>
+          <span style={{display: "block"}}>Empates</span>
           <strong>{placar["Empates"]}</strong>
         </div>
       </div>
 
+      {/* Tabuleiro */}
       <div className="board">
         {boardRows}
       </div>
 
+      {/* Mensagem de Fim de Jogo */}
       <div className="status-message">
         {status ? <h1>{status}</h1> : <h1 style={{visibility: "hidden"}}>_</h1>}
       </div>
 
-      <div className="controls">
+      {/* PAINEL DE CONTROLES */}
+      <div className="controls" style={{display: "flex", gap: "10px", justifyContent: "center", marginTop: "15px"}}>
         <BotaoReiniciar
           setQuadrados={() => setQuadrados(Array(tamanhoGrid * tamanhoGrid).fill(null))}
           setEstado={() => setTurno(0)}
@@ -420,15 +466,21 @@ export default function Campo() {
           setVencedores={setVencedores}
         />
 
-        <button onClick={() => setTela("menu")}>
-          ⬅ Voltar
+        <button 
+          onClick={desfazerJogada}
+          disabled={historico.length === 0 || status !== null}
+          style={{
+            cursor: (historico.length === 0 || status !== null) ? "not-allowed" : "pointer",
+            opacity: (historico.length === 0 || status !== null) ? 0.6 : 1
+          }}
+        >
+          ↩ Voltar Jogada
         </button>
       </div>
-    );
-  }
 
+      {/* Histórico de Jogadas */}
       {historico.length > 0 && (
-        <div className="history">
+        <div className="history" style={{marginTop: "20px"}}>
           <h3>Histórico ({historico.length} jogadas)</h3>
           <ul>
             {historico.map((item, idx) => (
@@ -437,6 +489,7 @@ export default function Campo() {
           </ul>
         </div>
       )}
+
     </div>
   );
 }
